@@ -28,7 +28,7 @@ parse(ip, I, points, varargin{:});
 ir = ip.Results;
 
 % Output
-Neurons = [];
+Neurons = zeros(0,2);
 R = [];
 % grade of each neuron
 grades = [];

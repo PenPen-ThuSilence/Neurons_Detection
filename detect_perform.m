@@ -10,7 +10,7 @@ num_neurons_all = 0;
 num_labels_all = 0;
 
 % dis threshold for match neruons
-match_threshold = 30;
+match_threshold = 50;
 
 for i = 1:num_imgs
     img = imgs{i};
@@ -19,8 +19,16 @@ for i = 1:num_imgs
                         min_line_length, fill_gap, extend_length, ...
                         threshold_angle, R_center, R_range, R_around, ...
                         threshold_around);
+    hold on;
+    axis on, xlabel x, ylabel y;
+    plot(labels(:,1),labels(:,2),'.','color','green', 'MarkerSize', 15);                
+    
     num_labels = size(labels, 1);
     num_neurons = size(Neurons, 1);
+    
+    if isempty(num_neurons)
+        continue;
+    end
     
     num_neurons_all = num_neurons_all + num_neurons;
     num_labels_all = num_labels + num_labels_all;
@@ -28,7 +36,7 @@ for i = 1:num_imgs
     for j = 1:num_labels
         dis = repmat(labels(j, :), num_neurons, 1) - Neurons;
         dis = sqrt(sum(dis.^2, 2));
-        if dis < match_threshold
+        if min(dis) < match_threshold
             TP = TP + 1;
         end
     end

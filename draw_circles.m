@@ -2,6 +2,9 @@ function circle_area = draw_circles(neurons, R, I)
 
 figure;
 imshow(I), hold on;
+if size(neurons, 1) == 0
+    return
+end
 axis on, xlabel x, ylabel y;
 plot(neurons(:,1),neurons(:,2),'.','color','red', 'MarkerSize', 8);
 

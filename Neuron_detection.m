@@ -66,7 +66,7 @@ BW = img_remove_back & ~dots_dialte;
 BW_filled = imfill(BW, 'holes');
 fill_differ = BW_filled & ~BW;
 % remove some filling of very large area
-min_area = 800;
+min_area = 300;
 fill = fill_differ & ~filterRegions_area(fill_differ, min_area);
 
 BW = BW | fill;
@@ -76,7 +76,7 @@ BW = imclose(BW, se);
 
 % region area to remove remaining white dots, we fill holes and link
 % structures of neurons to protect neurons here.
-min_area = 800;
+min_area = 200;
 BW_p = filterRegions_area(BW, min_area);
 % here we finish preprocessing parts
 %% 6. synapse detection
@@ -94,7 +94,7 @@ BW_p = filterRegions_area(BW, min_area);
 % 4. BUT single-bit branches are hard to detect, so we do another dilation.
 
 lines = line_detect_BW(BW_p, round(num_peaks), ...
-    'theta_space', 4, 'rho_space', 8, 'fill_gap', fill_gap, 'min_length', min_line_length);
+    'theta_space', 3, 'rho_space', 10, 'fill_gap', fill_gap, 'min_length', min_line_length);
 % lines = line_detection(BW_p, num_peaks, 'dilate_size', 2, ...
 %     'theta_space', 2, 'rho_space', 5, 'fill_gap', fill_gap, 'min_length', min_line_length);
 % parameters here
@@ -115,10 +115,10 @@ extended_lines = lines_extend(lines, extend_length);
 % get intersection points of extended lines
 points = line_intersect_points(extended_lines, size(BW_p,1), size(BW_p,2));
 
-draw_lines(BW_p, extended_lines); hold on;
-axis on, xlabel x, ylabel y;
-plot(points(:,1),points(:,2),'.','color','blue', 'MarkerSize', 8);
-title('intersections');
+% draw_lines(BW_p, extended_lines); hold on;
+% axis on, xlabel x, ylabel y;
+% plot(points(:,1),points(:,2),'.','color','blue', 'MarkerSize', 8);
+% title('intersections');
 %% 6. get neurons from intersection points
 % This section tries to select neurons from points we got from lines. The
 % main idea is to calculate numbers of bright angles in an anulus. For each
