@@ -13,36 +13,10 @@ threshold_around = 0.3;
 
 load train_imgs;
 img = train_imgs{1};
-%% Input Parameters
-% img: image to process
-% d0: distance in butterworth filter, reference value: 12
-% num_peaks: number of peaks in hough TF, reference value: 8000 (img: 4000 x 4000)
-% min_line_length: minimum length of lines detected with hough TF,
-% reference value: 55
-% fill_gap: maximum length of gaps to fill when detecting lines, reference
-% value: 10
-% extend_length: length to extend lines, reference value: 180
-% threshold_angle: threshold of angles when judging neurons, reference
-% value: 0.65
-% R_center, R_range: range of radiuses of neurons to detect, reference
-% value: R_center(75), R_range(25), which means radius range is 50:100
-% R_around: soma radius when judging neurons, reference value: 20
-% threshold_around: threshold of around
-
-% example:
-% [Neurons, R, BW_p] = Neuron_detection(img, 12, 8000,...
-%                        55, 10, 180, ...
-%                        0.65, 75, 25, 20, ...
-%                        0.25)
-%% 1. Read the image
-% read image and convert it to uint16
-img = uint16(img);
-[m,n] = size(img);
-
 %% 2. high frequency emphasis filtering
 % use butterworth filter to emphasize parts with high frequency
 a = 0.5;
-b = 4;
+b = 10;
 % fhfebtw = a * img_new + b * high-frequency parts
 fhfebtw = high_f_emphasis(img, d0, a, b);
 
@@ -58,16 +32,19 @@ img_remove_back = imopen(img_remove_back, se);
 figure; imshow(img_remove_back);
 
 %% 4. detect white dots
+a = 0.3;
+b = 4;
+% fhfebtw = a * img_new + b * high-frequency parts
+fhfebtw = high_f_emphasis(img, d0, a, b);
+
 % dots and synapses are emphasized after filtering
-dots = fhfebtw > 65500;
-figure; imshowpair(dots, img_remove_back);
+dots = fhfebtw > 65000;
 
 % exclude synapses
 minL = 20;
 filtered = filterRegions_MajorAxis(dots, minL);
 dots_filtered = dots & ~filtered;
 
-figure; imshowpair(dots_filtered, img_remove_back);
 %% 5. remove dots
 
 % erode dots, because detected dots are smaller than original ones
@@ -107,7 +84,7 @@ BW_p = filterRegions_area(BW, min_area);
 % 4. BUT single-bit branches are hard to detect, so we do another dilation.
 
 lines = line_detect_BW(BW_p, round(num_peaks), ...
-    'theta_space', 3, 'rho_space', 10, 'fill_gap', fill_gap, 'min_length', min_line_length);
+    'theta_space', 2, 'rho_space', 12, 'fill_gap', fill_gap, 'min_length', min_line_length);
 % lines = line_detection(BW_p, num_peaks, 'dilate_size', 2, ...
 %     'theta_space', 2, 'rho_space', 5, 'fill_gap', fill_gap, 'min_length', min_line_length);
 % parameters here
