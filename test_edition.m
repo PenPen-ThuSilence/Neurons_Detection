@@ -109,6 +109,25 @@ points = line_intersect_points(extended_lines, size(BW_p,1), size(BW_p,2));
 % axis on, xlabel x, ylabel y;
 % plot(points(:,1),points(:,2),'.','color','blue', 'MarkerSize', 8);
 % title('intersections');
+
+%% filtrate points
+
+index = sub2ind(size(image), points(:,2), points(:,1));
+
+BW = zeros(size(image));
+BW(index) = 1;
+
+r = 90;
+
+kernel = circle_kernel(r, 0);
+
+density = conv2(BW, kernel, 'same');
+
+max_density = ordfilt2(density, sum(kernel(:)),kernel);
+
+max_count = max(density(:));
+
+imshow(density > 0.1 * max_count);
 %% 6. get neurons from intersection points
 % This section tries to select neurons from points we got from lines. The
 % main idea is to calculate numbers of bright angles in an anulus. For each
