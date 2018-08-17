@@ -2,11 +2,11 @@
 load('train_imgs.mat');
 load('train_labels.mat');
 
-d0 = 12;
-num_peaks = 8000;
-min_line_length = 90;
+d0 = 10;
+num_peaks = 6000;
+min_line_length = 80;
 fill_gap = 12;
-extend_length = 180;
+extend_length = 150;
 threshold_angle = 0.7;
 R_center = 75;
 R_range = 30;

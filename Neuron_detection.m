@@ -27,12 +27,11 @@ function [Neurons, R, BW_p] = Neuron_detection(img, d0, num_peaks,...
 %% 1. Read the image
 % read image and convert it to uint16
 img = uint16(img);
-[m,n] = size(img);
 
 %% 2. high frequency emphasis filtering
 % use butterworth filter to emphasize parts with high frequency
 a = 0.5;
-b = 4;
+b = 10;
 % fhfebtw = a * img_new + b * high-frequency parts
 fhfebtw = high_f_emphasis(img, d0, a, b);
 
@@ -40,13 +39,19 @@ fhfebtw = high_f_emphasis(img, d0, a, b);
 
 %% 3. remove background
 % thresholding
-img_remove_back = fhfebtw > 15000;
+img_remove_back = fhfebtw > 20000;
 % erode and then dilate to remove remaining small dots in the background
 se = strel('disk', 1);
 img_remove_back = imopen(img_remove_back, se);
-% figure; imshow(img_remove_back);
+
+figure; imshow(img_remove_back);
 
 %% 4. detect white dots
+a = 0.3;
+b = 4;
+% fhfebtw = a * img_new + b * high-frequency parts
+fhfebtw = high_f_emphasis(img, d0, a, b);
+
 % dots and synapses are emphasized after filtering
 dots = fhfebtw > 65000;
 
@@ -94,7 +99,7 @@ BW_p = filterRegions_area(BW, min_area);
 % 4. BUT single-bit branches are hard to detect, so we do another dilation.
 
 lines = line_detect_BW(BW_p, round(num_peaks), ...
-    'theta_space', 3, 'rho_space', 10, 'fill_gap', fill_gap, 'min_length', min_line_length);
+    'theta_space', 2, 'rho_space', 12, 'fill_gap', fill_gap, 'min_length', min_line_length);
 % lines = line_detection(BW_p, num_peaks, 'dilate_size', 2, ...
 %     'theta_space', 2, 'rho_space', 5, 'fill_gap', fill_gap, 'min_length', min_line_length);
 % parameters here
