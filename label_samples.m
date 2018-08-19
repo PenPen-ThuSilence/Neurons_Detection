@@ -1,28 +1,18 @@
 %% label samples
 
-num = 24;
+
+num = length(samples);
+
 label_neurons = cell(num, 1);
 imgs = cell(num, 1);
-for i = 0:num-1
-    filename = ['samples/sample_', int2str(i), '.tif'];
-    img = imread(filename);
-    img = (img - min(img(:))) / (max(img(:)) - min(img(:))) * 65535;
-    img = uint16(img);
-    img = hist_adjust(img);
-    imgs{i+1} = img;
-%     sample = imread(filename);
-%     sample = hist_adjust(sample);
-%     label_neurons{i+1} = readPoints(sample);
-%     save label_neurons;
+for i = 1:num
+    sample = samples{i};
+    label_neurons{i} = readPoints(sample);
 end
 
 
 %% select
 % sample without neurons are removed
-load labels;
-% 14, 17, 19
-label_neurons(cellfun(@isempty,label_neurons)) = [];
-imgs([14,17,19]) = [];
 
 num = length(label_neurons);
 

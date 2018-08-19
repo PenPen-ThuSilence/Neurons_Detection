@@ -1,5 +1,5 @@
 %% read the image
-img = imread('resized/preprocessed-t0.tif');
+img = imread('images/preprocessed-t0.tif');
 
 image = img(3001:5000, 6001:8000);
 
