@@ -30,8 +30,8 @@ save('train_labels.mat', 'train_labels');
 save('test_imgs.mat', 'test_imgs');
 save('test_labels.mat', 'test_labels');
 %%
-for i = 1:11
-    draw_neurons(train_imgs{i}, train_labels{i});
+for i = 1:9
+    draw_neurons(samples{i}, label_neurons{i});
 end
 %% histogram adjust
 function img_new = hist_adjust(img)
