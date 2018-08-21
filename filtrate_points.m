@@ -1,7 +1,6 @@
 %% read the image
-img = imread('images/preprocessed-t0.tif');
-
-image = img(3001:5000, 6001:8000);
+image = samples{1};
+label = label_neurons{1};
 
 %% preprocess
 % binarize
@@ -10,7 +9,7 @@ BW = image > 40;
 % remove dots
 dots = image == 255;
 % exclude synapses
-min_area = 40;
+min_area = 20;
 filtered = filterRegions_area(dots, min_area);
 % minL = 15;
 % filtered = filterRegions_MajorAxis(dots, minL);
@@ -26,22 +25,22 @@ BW_p = imclose(BW_p, se);
 BW_filled = imfill(BW_p, 'holes');
 fill_differ = BW_filled & ~BW_p;
 % preventing from fill very large holes
-min_area = 100;
+min_area = 250;
 fill = fill_differ & ~filterRegions_area(fill_differ, min_area);
 
 BW_p = BW_p | fill;
 % thin synapse
 % BW_p = bwmorph(BW_p, 'thin');
 
-figure;imshowpair(BW_p, image > 40);
-title('fill holes');
+% figure;imshowpair(BW_p, image > 40);
+% title('fill holes');
 %% potential neurons
 % radius range
 R_center = 65;
 R_range = 35;
 Neurons = zeros(0, 2);
 
-for r = R_center - R_range:R_center + R_range
+parfor r = R_center - R_range:R_center + R_range
     % circular kernel: pixels inside circle(r) are 1, outside ones are 0.
     kernel = circle_kernel(r, 0);
     
@@ -49,7 +48,7 @@ for r = R_center - R_range:R_center + R_range
     density = conv2(double(BW_p), kernel, 'same');
     
     % pixels where conv2 result are larger, which means bright areas
-    neu = density > 0.25 * sum(kernel(:));
+    neu = density > 0.3 * sum(kernel(:));
     
     % find centroids of these bright areas
     stats = regionprops(neu, 'Centroid');
@@ -78,8 +77,8 @@ draw_neurons(BW_p, Neurons);
 % area around the center of neuron, because most neurons are bright in the
 % center.
 
-threshold_angle = 0.63;
-R_center = 60;
+threshold_angle = 0.6;
+R_center = 55;
 R_range = 35;
 R_around = 25;
 threshold_around = 0.25;
@@ -87,11 +86,13 @@ threshold_around = 0.25;
 [final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, Neurons, ...
                     'threshold_angle', threshold_angle, ...
                     'merge_dis', 2, ...
-                    'R', R_center, 'R_range', R_range, 'annulus', 3, ...
+                    'R', R_center, 'R_range', R_range, 'annulus', 4, ...
                     'R_around', R_around, 'threshold_around', threshold_around);
 
 draw_circles(final_Neurons, R, BW_p);
 
+axis on, xlabel x, ylabel y;
+plot(label(:,1),label(:,2),'.','color','green', 'MarkerSize', 15); 
 % number neurons
 for i = 1:length(grades)
     text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');
