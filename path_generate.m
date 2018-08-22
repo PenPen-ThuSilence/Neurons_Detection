@@ -28,8 +28,12 @@ while true
     theta = atan2d(current(2) - former(2), current(1) - former(1));
     % get neighbours
     [neigh_x, neigh_y] = meshgrid(current(1) + (-1:1), current(2) + (-1:1));
-    neigh_index = find(skeleton(current(2) + (-1:1), current(1) + (-1:1))...
-        & ~COVER(current(2) + (-1:1), current(1) + (-1:1)));
+    exceed_index = neigh_x < 1 | neigh_x > M | neigh_y < 1 | neigh_y > N; 
+    neigh_x(exceed_index) = [];
+    neigh_y(exceed_index) = [];
+    index = sub2ind([M, N], neigh_y, neigh_x);
+    neigh_index = find(skeleton(index)...
+        & ~COVER(index));
     % exclude itself
     % find feasible direction 
     neigh_x = neigh_x(neigh_index);
