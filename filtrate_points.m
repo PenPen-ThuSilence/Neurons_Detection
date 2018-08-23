@@ -4,6 +4,7 @@ load label_neurons;
 image = samples{1};
 label = label_neurons{1};
 
+
 %% preprocess
 % binarize
 BW = image > 40;
@@ -79,16 +80,16 @@ draw_neurons(BW_p, Neurons);
 % area around the center of neuron, because most neurons are bright in the
 % center.
 
-threshold_angle = 0.6;
+threshold_angle = 0.55;
 R_center = 45;
 R_range = 25;
 R_around = 25;
-threshold_around = 0.25;
+threshold_around = 0.3;
 
 [final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, Neurons, ...
                     'threshold_angle', threshold_angle, ...
                     'merge_dis', 2, ...
-                    'R', R_center, 'R_range', R_range, 'annulus', 4, ...
+                    'R', R_center, 'R_range', R_range, 'annulus', 5, ...
                     'R_around', R_around, 'threshold_around', threshold_around);
 
 draw_circles(final_Neurons, R, BW_p);
@@ -106,7 +107,6 @@ BW_thin = bwmorph(BW_p, 'thin', 20);
 draw_circles(final_Neurons, R, BW_thin);
 
 axis on, xlabel x, ylabel y;
-plot(label(:,1),label(:,2),'.','color','green', 'MarkerSize', 15); 
 % number neurons
 for i = 1:length(grades)
     text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');

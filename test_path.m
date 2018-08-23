@@ -57,17 +57,22 @@ for k = 1:num
                         size(path{u_index(j)},1) < size(synapse{k, target(j)},1)
                     % find shorter path
                     original_path = synapse{k, target(j)};
-                    plot(original_path(:,1),original_path(:,2),'.','color','blue','MarkerSize', 3);
                     synapse{k, target(j)} = path{u_index(j)};
                     new_path = synapse{k, target(j)};
-                    plot(new_path(:,1),new_path(:,2),'.','color','green','MarkerSize', 3);
                     continue;
                 end
-                connected(k, target(j)) = true;
-                synapse{k, target(j)} = path{u_index(j)};
-                path_j = path{u_index(j)};
-                plot(path_j(:,1),path_j(:,2),'.','color','green','MarkerSize', 3);
+                if ~connected(k, target(j))
+                    connected(k, target(j)) = true;
+                    synapse{k, target(j)} = path{u_index(j)};
+                    path_j = path{u_index(j)};
+                end
             end
+        end
+    end
+    for i = 1:num
+        if connected(k, i)
+            path = synapse{k, i};
+            plot(path(:,1),path(:,2),'.','color','green','MarkerSize', 3);
         end
     end
 end

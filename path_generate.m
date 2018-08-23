@@ -114,8 +114,8 @@ while true
         % for compare
         % if line is going through the source neuron, stop it
         % to prevent mis-stop, set R(source) smaller
-        R_compare = 1.2 * R;
-        R_compare(source) = 0.8 * R_compare(source) / 1.2;
+        R_compare = R;
+        R_compare(source) = 1.5 * R_compare(source);
         if max(dis < R_compare)
             target = find(dis < R_compare);
             if target == source
