@@ -17,8 +17,8 @@ path = [];
 % init target neuron
 target = [];
 
-fill_gap = 10;
-theta_thre = 10;
+fill_gap = 20;
+theta_thre = 20;
 [M, N] = size(skeleton);
 %% Recursion: DFS
 while true

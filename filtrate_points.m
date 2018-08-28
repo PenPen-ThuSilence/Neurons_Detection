@@ -126,7 +126,7 @@ circle_area = circle_points(Neurons, round(R*1.5), BW_thin);
 %     plot(points(:,1),points(:,2),'.','color','green', 'MarkerSize', 5); 
 % end
 
-for k = 1:num
+parfor k = 1:num
     COVER = false(size(BW_thin));
     % primary queue: intersection points of circle and neuron
     queue_p = circle_area{k};
@@ -166,22 +166,26 @@ for k = 1:num
                 end
             end
             [target, u_index] = unique(target);
+            connected_k = connected(k, :);
+            synapse_k = synapse(k, :);
             for j = 1:length(target)
-                if connected(k, target(j)) && ...
-                        size(path{u_index(j)},1) < size(synapse{k, target(j)},1)
-                    % find shorter path
-                    original_path = synapse{k, target(j)};
+                if connected_k(target(j)) && ...
+                        size(path{u_index(j)},1) < size(synapse_k{target(j)}, 1)
+                    % found shorter path
+                    original_path = synapse_k{target(j)};
                     plot(original_path(:,1),original_path(:,2),'.','color','blue','MarkerSize', 3);
-                    synapse{k, target(j)} = path{u_index(j)};
-                    new_path = synapse{k, target(j)};
+                    synapse_k{target(j)} = path{u_index(j)};
+                    new_path = synapse_k{target(j)};
                     plot(new_path(:,1),new_path(:,2),'.','color','green','MarkerSize', 3);
                     continue;
                 end
-                connected(k, target(j)) = true;
-                synapse{k, target(j)} = path{u_index(j)};
+                connected_k(target(j)) = true;
+                synapse_k{target(j)} = path{u_index(j)};
                 path_j = path{u_index(j)};
                 plot(path_j(:,1),path_j(:,2),'.','color','green','MarkerSize', 3);
             end
+            connected(k, :) = connected_k;
+            synapse(k, :) = synapse_k;
         end
     end
 end
