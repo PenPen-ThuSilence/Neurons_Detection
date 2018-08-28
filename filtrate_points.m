@@ -4,7 +4,6 @@ load label_neurons;
 image = samples{1};
 label = label_neurons{1};
 
-
 %% preprocess
 % binarize
 BW = image > 40;
@@ -12,7 +11,7 @@ BW = image > 40;
 % remove dots
 dots = image == 255;
 % exclude synapses
-min_area = 20;
+min_area = 25;
 filtered = filterRegions_area(dots, min_area);
 % minL = 15;
 % filtered = filterRegions_MajorAxis(dots, minL);
@@ -28,7 +27,7 @@ BW_p = imclose(BW_p, se);
 BW_filled = imfill(BW_p, 'holes');
 fill_differ = BW_filled & ~BW_p;
 % preventing from fill very large holes
-min_area = 250;
+min_area = 50;
 fill = fill_differ & ~filterRegions_area(fill_differ, min_area);
 
 BW_p = BW_p | fill;
@@ -39,8 +38,8 @@ BW_p = BW_p | fill;
 % title('fill holes');
 %% potential neurons
 % radius range
-R_center = 45;
-R_range = 25;
+R_center = 35;
+R_range = 15;
 Neurons = zeros(0, 2);
 
 parfor r = R_center - R_range:R_center + R_range
@@ -94,8 +93,6 @@ threshold_around = 0.3;
 
 draw_circles(final_Neurons, R, BW_p);
 
-axis on, xlabel x, ylabel y;
-plot(label(:,1),label(:,2),'.','color','green', 'MarkerSize', 15); 
 % number neurons
 for i = 1:length(grades)
     text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');

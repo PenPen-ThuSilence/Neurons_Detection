@@ -1,13 +1,12 @@
+function [U, V, theta] = neurite_vector(image, sigma)
 %%
-image = imread('images/preprocessed-t0.tif');
-image = image(4401:4700, 6451:6750);
-%%
-% same function as img_as_float
+% INPUT:
+% sigma: size of gaussian kernel
+% image: image to process
+
+% 0 - 1 double
 image = double(image);
 image = image ./ max(image(:));
-
-% gaussian kernel
-sigma = 2;
 
 gaussian_img = imgaussfilt(image, sigma, 'padding', 'replicate');
 
@@ -38,12 +37,9 @@ end
 U = U .* E;
 V = V .* E;
 
+% show
 figure; imshow(image);
-
 hold on;
 quiver(U, V);
 
 theta = atan2d(V, U);
-%%
-
-BW_thin = bwmorph(BW_p, 'thin', 20);
