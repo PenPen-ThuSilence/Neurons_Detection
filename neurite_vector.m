@@ -37,9 +37,4 @@ end
 U = U .* E;
 V = V .* E;
 
-% show
-figure; imshow(image);
-hold on;
-quiver(U, V);
-
 theta = atan2d(V, U);
