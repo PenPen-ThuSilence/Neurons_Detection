@@ -121,7 +121,7 @@ connected = zeros(num, num);
 synapse = cell(num);
 [m, n] = size(BW_thin);
 
-circle_area = circle_points(Neurons, round(R*1.5), BW_thin);
+circle_area = circle_points(Neurons, round(R*1.2), BW_thin);
 
 % for k = 1:num
 %     points = circle_area{k};
@@ -143,12 +143,13 @@ for k = 1:num
     plot(start_points(:,1),start_points(:,2),'.','color','red','MarkerSize', 15);
     quiver(U, V);
     % find path from primary queue points
-    [connected_k, synapse_k] = kalman_synapse(start_points, Neurons, R, BW_p, k, BW_thin, theta);
+    [connected_k, synapse_k] = kalman_synapse(start_points, Neurons, R, k, BW_thin, theta);
     connected(k, :) = connected_k;
     synapse(k, :) = synapse_k;
 end
 
-draw_synapse(connected, synapse, image);
+breadth = synapse_breadth(synapse, BW_p);
+draw_synapse(connected, synapse, image, breadth);
  %% find synapses
 % Neurons = final_Neurons;
 % num = size(Neurons, 1);

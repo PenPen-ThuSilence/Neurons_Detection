@@ -1,4 +1,4 @@
-function [connected, synapse] = kalman_synapse(originations, Neurons, R, BW, source, skeleton, thetas)
+function [connected, synapse] = kalman_synapse(originations, Neurons, R, source, skeleton, thetas)
 % current: current pixel on the path (start point)
 % former: former pixel on the path (tell the forward direction)
 % source: the neuron(index) this path originates from 
@@ -26,6 +26,7 @@ end
 
 bifur_dis = 1;
 [M, N] = size(skeleton);
+skeleton_save = skeleton;
 
 % for compare
 % if line is going through the source neuron, stop it
@@ -35,6 +36,9 @@ R_compare = 1.2 * R';
 move_step = 1.5;
 move_var = 2;
 measure_var = 1;
+
+theta_thre = 10;
+fill_gap = 10;
 
 while num_bifur > 0
     % get information from bifur parameters
@@ -59,16 +63,34 @@ while num_bifur > 0
         % forward direction
         theta_mesh_dis = abs(theta_mesh - former_theta);
         theta_mesh_dis(theta_mesh_dis > 180) = 360 - theta_mesh_dis(theta_mesh_dis > 180);
-        forward_mesh = theta_mesh_dis < 140;
+        forward_mesh = theta_mesh_dis < 180;
         % available direction from skeleton
         available_mesh = skeleton(yy(:,1), xx(1,:));
         available_forward = forward_mesh & available_mesh;
-        available_forward(5) = false;
         % path terminate
         if ~sum(available_forward(:))
-            num_bifur = num_bifur - 1;
-            bifur_paras(1) = [];
-            break;
+            % whether this is just a small gap ?
+            [area_x, area_y] = produce_meshgrid(current, fill_gap, M, N);
+            area_theta = atan2d(area_y - current(2), area_x - current(1));
+            theta_differ = abs(area_theta - thetas(current(2), current(1)));
+            in_direction = theta_differ < theta_thre;
+            available = in_direction & skeleton(area_y(:, 1), area_x(1, :));
+            if sum(available(:)) > 0
+                % continue with the point after gap
+                dist = sqrt((area_x - current(1)).^2 + (area_y - current(2).^2));
+                dist_available = dist ./ available;
+                [dis_min, index_forward] = min(dist_available(:));
+                next_after_gap = [area_x(index_forward), area_y(index_forward)];
+                former = current;
+                current = next_after_gap;
+                path_length = path_length + sqrt(dis_min);
+                continue;
+            else
+                % end this path
+                num_bifur = num_bifur - 1;
+                bifur_paras(1) = [];
+                break;
+            end
         end
         neurite_theta = thetas(yy(:,1), xx(1,:));
         neurite_available_forward = neurite_theta(available_forward);
