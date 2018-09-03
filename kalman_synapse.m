@@ -72,7 +72,17 @@ while num_bifur > 0
             % whether this is just a small gap ?
             [area_x, area_y] = produce_meshgrid(current, fill_gap, M, N);
             area_theta = atan2d(area_y - current(2), area_x - current(1));
-            theta_differ = abs(area_theta - thetas(current(2), current(1)));
+            % get angle from neurite detector
+            angle = thetas(current(2), current(1));
+            % since angle means two opposite direction, 
+            % we should find the direction to forward
+            theta1 = angle; 
+            theta2 = - sign(theta1) * (180 - abs(angle));
+            theta_dis = abs([theta1, theta2] - former_theta);
+            theta_dis(theta_dis > 180) = 360 - theta_dis(theta_dis > 180);
+            [~, index_theta] = min(theta_dis);
+            forward_theta = (index_theta == 1) * theta1 + (index_theta == 2) * theta2;
+            theta_differ = abs(area_theta - forward_theta);
             in_direction = theta_differ < theta_thre;
             available = in_direction & skeleton(area_y(:, 1), area_x(1, :));
             if sum(available(:)) > 0

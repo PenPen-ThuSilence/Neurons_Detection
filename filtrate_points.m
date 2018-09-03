@@ -128,7 +128,7 @@ circle_area = circle_points(Neurons, round(R*1.2), BW_thin);
 %     plot(points(:,1),points(:,2),'.','color','green', 'MarkerSize', 5); 
 % end
 
-for k = 1:num
+for k = 3:num
     % primary queue: intersection points of circle and neuron
     start_points = circle_area{k};
     index = sub2ind([m, n], start_points(:,2), start_points(:,1));
