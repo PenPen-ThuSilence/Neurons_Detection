@@ -3,22 +3,23 @@ load samples;
 load label_neurons;
 image = samples{1};
 label = label_neurons{1};
-
-image = image(501:1000, 501:1000);
 %% preprocess
 % binarize
 BW = image > 30;
 
 % remove dots
-dots = image == 255;
+dots = image >= 240;
 % exclude synapses
-min_area = 25;
-filtered = filterRegions_area(dots, min_area);
-% minL = 15;
-% filtered = filterRegions_MajorAxis(dots, minL);
-dots_filtered = dots & ~filtered;
+% min_area = 25;
+% filtered = filterRegions_area(dots, min_area);
+% % minL = 15;
+% % filtered = filterRegions_MajorAxis(dots, minL);
+% dots_filtered = dots & ~filtered;
+% 
+% BW_p = BW & ~dots_filtered;
 
-BW_p = BW & ~dots_filtered;
+% not filter synapse
+BW_p = BW_p & ~dots;
 
 % dilate and erode to connect parts of neurons
 se = strel('disk', 2);
@@ -28,7 +29,7 @@ BW_p = imclose(BW_p, se);
 BW_filled = imfill(BW_p, 'holes');
 fill_differ = BW_filled & ~BW_p;
 % preventing from fill very large holes
-min_area = 50;
+min_area = 40;
 fill = fill_differ & ~filterRegions_area(fill_differ, min_area);
 
 BW_p = BW_p | fill;
@@ -39,7 +40,7 @@ BW_p = BW_p | fill;
 % title('fill holes');
 %% potential neurons
 % radius range
-R_center = 40;
+R_center = 35;
 R_range = 20;
 Neurons = zeros(0, 2);
 
@@ -64,7 +65,7 @@ parfor r = R_center - R_range:R_center + R_range
 end
 
 % centroids of bright areas are potential neurons
-draw_neurons(BW_p, Neurons);
+draw_neurons(image, Neurons);
 
 %% get neurons from centroids
 % This section tries to select neurons from points we got from lines. The
@@ -81,19 +82,19 @@ draw_neurons(BW_p, Neurons);
 % area around the center of neuron, because most neurons are bright in the
 % center.
 
-threshold_angle = 0.7;
-R_center = 45;
+threshold_angle = 0.6;
+R_center = 40;
 R_range = 25;
-R_around = 25;
-threshold_around = 0.3;
+R_around = 15;
+threshold_around = 0.2;
 
 [final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, Neurons, ...
                     'threshold_angle', threshold_angle, ...
                     'merge_dis', 2, ...
-                    'R', R_center, 'R_range', R_range, 'annulus', 5, ...
+                    'R', R_center, 'R_range', R_range, 'annulus', 4, ...
                     'R_around', R_around, 'threshold_around', threshold_around);
 
-draw_circles(final_Neurons, R, BW_p);
+draw_circles(final_Neurons, R, image);
 
 % number neurons
 for i = 1:length(grades)
@@ -121,14 +122,14 @@ connected = zeros(num, num);
 synapse = cell(num);
 [m, n] = size(BW_thin);
 
-circle_area = circle_points(Neurons, round(R*1.2), BW_thin);
+circle_area = circle_points(Neurons, round(R*1.3), BW_thin);
 
 % for k = 1:num
 %     points = circle_area{k};
 %     plot(points(:,1),points(:,2),'.','color','green', 'MarkerSize', 5); 
 % end
 
-for k = 3:num
+for k = 1:num
     % primary queue: intersection points of circle and neuron
     start_points = circle_area{k};
     index = sub2ind([m, n], start_points(:,2), start_points(:,1));
@@ -143,9 +144,20 @@ for k = 3:num
     plot(start_points(:,1),start_points(:,2),'.','color','red','MarkerSize', 15);
     quiver(U, V);
     % find path from primary queue points
-    [connected_k, synapse_k] = kalman_synapse(start_points, Neurons, R, k, BW_thin, theta);
+    [connected_k, synapse_k] = find_synapse(start_points, Neurons, R, k, BW_thin, theta);
     connected(k, :) = connected_k;
     synapse(k, :) = synapse_k;
+end
+
+% make sure connectivity is symmetrical and least length
+for i = 1:num-1
+    for j = i+1:num
+        if connected(i, j) && connected(j, i) && connected(i, j) > connected(j, i)...
+                || connected(j, i) && ~connected(i, j)
+            connected(i, j) = connected(j, i);
+            synapse(i,j) = synapse(j, i);
+        end    
+    end
 end
 
 breadth = synapse_breadth(synapse, BW_p);

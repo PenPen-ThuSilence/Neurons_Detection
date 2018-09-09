@@ -38,7 +38,7 @@ move_var = 2;
 measure_var = 1;
 
 theta_thre = 10;
-fill_gap = 10;
+fill_gap = 0;
 
 while num_bifur > 0
     % get information from bifur parameters

@@ -1,130 +1,37 @@
-%% detect centers of neurons
-function [Neurons, R, BW_p] = Neuron_detection(img, d0, num_peaks,...
-                        min_line_length, fill_gap, extend_length, ...
-                        threshold_angle, R_center, R_range, R_around, ...
-                        threshold_around)
-%% Input Parameters
-% img: image to process
-% d0: distance in butterworth filter, reference value: 12
-% num_peaks: number of peaks in hough TF, reference value: 8000 (img: 4000 x 4000)
-% min_line_length: minimum length of lines detected with hough TF,
-% reference value: 55
-% fill_gap: maximum length of gaps to fill when detecting lines, reference
-% value: 10
-% extend_length: length to extend lines, reference value: 180
-% threshold_angle: threshold of angles when judging neurons, reference
-% value: 0.65
-% R_center, R_range: range of radiuses of neurons to detect, reference
-% value: R_center(75), R_range(25), which means radius range is 50:100
-% R_around: soma radius when judging neurons, reference value: 20
-% threshold_around: threshold of around
+%% read image
+% Input: filename of image
+filename = 'images/cropped-t0.tif';
+img = imread(filename);
+img = img(5001:7000, 5001:7000);
+%% Preprocess
+scale = 0.5;
+level_low = 0.3;
+level_high = 0.98;
+disk_size = 1;
+label_thre = 20;
+intensity_thre = 180;
+extent_thre = 0.4;
+area_thre = 400;
+binary_thre = 35;
+min_pixel_num = 40;
 
-% example:
-% [Neurons, R, BW_p] = Neuron_detection(img, 12, 8000,...
-%                        55, 10, 180, ...
-%                        0.65, 75, 25, 20, ...
-%                        0.25)
-%% 1. Read the image
-% read image and convert it to uint16
-img = uint16(img);
+[image_removed, BW_p] = preprocess(img, scale, level_low, level_high, ...
+                                     disk_size, label_thre, intensity_thre, ...
+                                     extent_thre, area_thre, binary_thre, min_pixel_num);
+% show                                 
+figure;
+imshow(image_removed);
+figure;
+imshow(BW_p);
+%% get potential points which can be neurons with kernel
+% parameters
+R_min = 10;
+R_max = 25;
+density_thre = 0.45:0.05:1;
 
-%% 2. high frequency emphasis filtering
-% use butterworth filter to emphasize parts with high frequency
-a = 0.5;
-b = 10;
-% fhfebtw = a * img_new + b * high-frequency parts
-fhfebtw = high_f_emphasis(img, d0, a, b);
-
-% figure; imshow(fhfebtw);
-
-%% 3. remove background
-% thresholding
-img_remove_back = fhfebtw > 20000;
-% erode and then dilate to remove remaining small dots in the background
-se = strel('disk', 1);
-img_remove_back = imopen(img_remove_back, se);
-
-figure; imshow(img_remove_back);
-
-%% 4. detect white dots
-a = 0.3;
-b = 4;
-% fhfebtw = a * img_new + b * high-frequency parts
-fhfebtw = high_f_emphasis(img, d0, a, b);
-
-% dots and synapses are emphasized after filtering
-dots = fhfebtw > 65000;
-
-% exclude synapses
-minL = 20;
-filtered = filterRegions_MajorAxis(dots, minL);
-dots_filtered = dots & ~filtered;
-
-%% 5. remove dots
-
-% erode dots, because detected dots are smaller than original ones
-se = strel('disk', 4);
-dots_dialte = imdilate(dots_filtered, se);
-BW = img_remove_back & ~dots_dialte;
-
-% fill holes, because it can also remove something inside neurons
-BW_filled = imfill(BW, 'holes');
-fill_differ = BW_filled & ~BW;
-% remove some filling of very large area
-min_area = 300;
-fill = fill_differ & ~filterRegions_area(fill_differ, min_area);
-
-BW = BW | fill;
-
-% dilate and erode to link structures of neurons
-BW = imclose(BW, se);
-
-% region area to remove remaining white dots, we fill holes and link
-% structures of neurons to protect neurons here.
-min_area = 200;
-BW_p = filterRegions_area(BW, min_area);
-% here we finish preprocessing parts
-%% 6. synapse detection
-% We can extend synapses to intersect within neurons, so first we need to
-% detect lines to get synapses.
-
-% Hough TF: (x,y) -> (rho, theta). 
-
-% Based on hough tf, we can detect lines in the image which are mostly
-% synapses. Before transfroms, we should do some preprocessing: 
-
-% 1. Get edge with canny method. 
-% 2. The edges of a synapse are obviously two parallel lines, here we use close compution to combine the two parallel lines. 
-% 3. Then we use bwmorph to thin the edge to single-bit branches.
-% 4. BUT single-bit branches are hard to detect, so we do another dilation.
-
-lines = line_detect_BW(BW_p, round(num_peaks), ...
-    'theta_space', 2, 'rho_space', 12, 'fill_gap', fill_gap, 'min_length', min_line_length);
-% lines = line_detection(BW_p, num_peaks, 'dilate_size', 2, ...
-%     'theta_space', 2, 'rho_space', 5, 'fill_gap', fill_gap, 'min_length', min_line_length);
-% parameters here
-% 
-% 1. num_peak: how many peaks to use after Hough TF
-% 2. dilate_size: (in step 4) dilation makes it easier to detect lines.
-% 3. theta_space&rho_space: parameters that influence the range of TF
-%    results, the fewer space, the more lines.
-% 4. fill_gap: length limit of gap to connect two lines
-% 5. min_length: length limit of lines(very short lines are ignored)
-
-%% 7. extend lines to intersection
-% extend_length: extended length in both directions
-% short to miss intersections, long to complex
-
-extended_lines = lines_extend(lines, extend_length);
-
-% get intersection points of extended lines
-points = line_intersect_points(extended_lines, size(BW_p,1), size(BW_p,2));
-
-% draw_lines(BW_p, extended_lines); hold on;
-% axis on, xlabel x, ylabel y;
-% plot(points(:,1),points(:,2),'.','color','blue', 'MarkerSize', 8);
-% title('intersections');
-%% 6. get neurons from intersection points
+potential_neurons = intensive_points(BW_p, R_min, R_max, density_thre);
+draw_neurons(BW_p, potential_neurons);
+%% get neurons from centroids
 % This section tries to select neurons from points we got from lines. The
 % main idea is to calculate numbers of bright angles in an anulus. For each
 % degree x in 0:360, if there are bright pixels in the anulus whose angles 
@@ -139,53 +46,86 @@ points = line_intersect_points(extended_lines, size(BW_p,1), size(BW_p,2));
 % area around the center of neuron, because most neurons are bright in the
 % center.
 
-[Neurons, grades, R, around] = IsNeurons_new_2(BW_p, points, ...
+% parameters
+threshold_angle = 0.65;
+R_max = 22;
+R_min = 10;
+R_around = 8;
+threshold_around = 0.2;
+
+[final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, Neurons, ...
                     'threshold_angle', threshold_angle, ...
-                    'merge_dis', 4, ...
-                    'R', R_center, 'R_range', R_range, 'annulus', 3, ...
+                    'merge_dis', 2, ...
+                    'R_max', R_max, 'R_min', R_min, 'annulus', 3, ...
                     'R_around', R_around, 'threshold_around', threshold_around);
 
-draw_circles(Neurons, R, BW_p);
+draw_circles(final_Neurons, R, image_removed);
 
 % number neurons
 for i = 1:length(grades)
-    text(Neurons(i,1),Neurons(i,2),int2str(i),'FontSize',15,'Color','red');
+    text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',20,'Color','red');
 end
-% the method still needs improvements, because there are obvious 
-% mistakes from the image. We need to add filters to avoid mistaking
-% some cross of synapses as neurons and try to get more neurons.
-% In addition, it's very time-consuming but it can be parallel.
+%% assign possibility and direction for synapse
+BW_thin = bwmorph(BW_p, 'thin', 20);
 
-%% 7. find synapse from neurons
-% With neurons and R we get before, we use a simple method to find synapse.
+img = image_removed .* uint8(BW_thin);
 
-% First, we initialize queues of each neurons with intersections of
-% circle(neuron, R) and bright points in BW. 
+sigma = 1;
+[U, V, theta] = neurite_vector(BW_thin, sigma);
 
-% And we label points in queues of different neurons with 
-% different labels. 
+theta = theta .* BW_thin;
 
-% Then for each queue, we get queue head out, 
-% find its bright neighbours(conn = 8) and add them to queue.
+% show
+% figure; imshow(BW_thin);
+% hold on;
+% quiver(U, V);
+%% find synaspe with thinned image
+Neurons = final_Neurons;
+num = size(Neurons, 1);
+connected = zeros(num, num);
+synapse = cell(num);
+[m, n] = size(BW_thin);
 
-% If there are labeled neighbours of different neurons,
-% we get a synapse. 
+circle_area = circle_points(Neurons, round(R*1.3), BW_thin);
 
-% If queues are all empty, the algorithm terminates.
+% for k = 1:num
+%     points = circle_area{k};
+%     plot(points(:,1),points(:,2),'.','color','green', 'MarkerSize', 5); 
+% end
 
-% For we start expanding from every neuron, 
-% different labels meet and get synapse.
+parfor k = 1:num
+    % primary queue: intersection points of circle and neuron
+    start_points = circle_area{k};
+    index = sub2ind([m, n], start_points(:,2), start_points(:,1));
+    start_points = start_points(BW_thin(index), :);
+    start_points = merge_random(start_points, 10);
+    
+    %% PLOT PROCESS
+%     % show primary queue
+%     draw_circles_k(Neurons, R, BW_thin, k); hold on;
+%     % label neurons
+%     for j = 1:num
+%         text(Neurons(j,1),Neurons(j,2),int2str(j),'FontSize',15,'Color','yellow');
+%     end
+%     plot(start_points(:,1),start_points(:,2),'.','color','red','MarkerSize', 15);
+%     quiver(U, V);
 
-% [connectivity, label] = queue_synapse(Neurons, roi, R);
+    %% find path from primary queue points
+    [connected_k, synapse_k] = find_synapse(start_points, Neurons, R, k, BW_thin, theta);
+    connected(k, :) = connected_k;
+    synapse(k, :) = synapse_k;
+end
 
-% print matrix of connections
+% make sure connectivity is symmetrical and least length
+for i = 1:num-1
+    for j = i+1:num
+        if connected(i, j) && connected(j, i) && connected(i, j) > connected(j, i)...
+                || connected(j, i) && ~connected(i, j)
+            connected(i, j) = connected(j, i);
+            synapse(i,j) = synapse(j, i);
+        end    
+    end
+end
 
-% In the preprocessing, we may break off some synapses,  
-% so we need to try to link broken synapses. 
-% Besides, the queue-method is quite time-consuming 
-% if applied to larger images because it can't be parallel
-
-%% 8. link cracked synapses
-
-% link_dis = 10;
-% linked_connectivity = link(Neurons, label, link_dis, connectivity);
+breadth = synapse_breadth(synapse, BW_p);
+draw_synapse(connected, synapse, image_removed, breadth);

@@ -6,14 +6,14 @@ if size(neurons, 1) == 0
     return
 end
 axis on, xlabel x, ylabel y;
-plot(neurons(:,1),neurons(:,2),'.','color','red', 'MarkerSize', 8);
+plot(neurons(:,1),neurons(:,2),'.','color','red', 'MarkerSize', 2);
 
 [M, N] = size(I);
 num = length(R);
 
 for k = 1:num
     % generate meshgrid
-    annulus = 3;
+    annulus = 1;
     row = max(1, neurons(k,1) - R(k) - annulus):...
         min(N, neurons(k,1) + R(k) + annulus);
     col = max(1, neurons(k,2) - R(k) - annulus)...

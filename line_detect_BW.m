@@ -3,7 +3,7 @@ function lines = line_detect_BW(BW, num_peaks, varargin)
     ip = inputParser;
     ip.addRequired('BW');
     ip.addRequired('num_peaks');
-    ip.addParameter('theta_space', 3);
+    ip.addParameter('theta_space', 1);
     ip.addParameter('rho_space', 5);
     ip.addParameter('fill_gap', 5);
     ip.addParameter('min_length',60);
