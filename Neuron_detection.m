@@ -23,7 +23,8 @@ figure;
 imshow(image_removed);
 figure;
 imshow(BW_p);
-%% get potential points which can be neurons with kernel
+%% Neuron Detection
+% get potential points which can be neurons with kernel
 % parameters
 R_min = 25;
 R_max = 50;
@@ -31,7 +32,7 @@ density_thre = 0.45:0.05:1;
 
 potential_neurons = intensive_points(BW_p, R_min, R_max, density_thre);
 draw_neurons(BW_p, potential_neurons);
-%% get neurons from centroids
+% get neurons from centroids
 % This section tries to select neurons from points we got from lines. The
 % main idea is to calculate numbers of bright angles in an anulus. For each
 % degree x in 0:360, if there are bright pixels in the anulus whose angles 
