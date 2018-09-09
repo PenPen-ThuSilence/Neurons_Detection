@@ -53,7 +53,7 @@ R_min = 10;
 R_around = 6;
 threshold_around = 0.2;
 
-[final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, Neurons, ...
+[final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, potential_neurons, ...
                     'threshold_angle', threshold_angle, ...
                     'merge_dis', 2, ...
                     'R_max', R_max, 'R_min', R_min, 'annulus', 3, ...
@@ -63,12 +63,12 @@ draw_circles(final_Neurons, R, image_removed);
 
 % number neurons
 for i = 1:length(grades)
-    text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',20,'Color','red');
+    text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');
 end
 
 %% Synapse detection
 % degree and distance threshold when connecting broken synapse
-theta_thre = 10;
+theta_thre = 15;
 fill_gap = 10;
 [connected, synapse, breadth] = synapse_detection(BW_p, final_Neurons, R,...
                                                 theta_thre, fill_gap);
