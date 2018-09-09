@@ -50,7 +50,7 @@ draw_neurons(BW_p, potential_neurons);
 threshold_angle = 0.65;
 R_max = 22;
 R_min = 10;
-R_around = 8;
+R_around = 6;
 threshold_around = 0.2;
 
 [final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, Neurons, ...
@@ -65,67 +65,12 @@ draw_circles(final_Neurons, R, image_removed);
 for i = 1:length(grades)
     text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',20,'Color','red');
 end
-%% assign possibility and direction for synapse
-BW_thin = bwmorph(BW_p, 'thin', 20);
 
-img = image_removed .* uint8(BW_thin);
-
-sigma = 1;
-[U, V, theta] = neurite_vector(BW_thin, sigma);
-
-theta = theta .* BW_thin;
-
-% show
-% figure; imshow(BW_thin);
-% hold on;
-% quiver(U, V);
-%% find synaspe with thinned image
-Neurons = final_Neurons;
-num = size(Neurons, 1);
-connected = zeros(num, num);
-synapse = cell(num);
-[m, n] = size(BW_thin);
-
-circle_area = circle_points(Neurons, round(R*1.3), BW_thin);
-
-% for k = 1:num
-%     points = circle_area{k};
-%     plot(points(:,1),points(:,2),'.','color','green', 'MarkerSize', 5); 
-% end
-
-parfor k = 1:num
-    % primary queue: intersection points of circle and neuron
-    start_points = circle_area{k};
-    index = sub2ind([m, n], start_points(:,2), start_points(:,1));
-    start_points = start_points(BW_thin(index), :);
-    start_points = merge_random(start_points, 10);
-    
-    %% PLOT PROCESS
-%     % show primary queue
-%     draw_circles_k(Neurons, R, BW_thin, k); hold on;
-%     % label neurons
-%     for j = 1:num
-%         text(Neurons(j,1),Neurons(j,2),int2str(j),'FontSize',15,'Color','yellow');
-%     end
-%     plot(start_points(:,1),start_points(:,2),'.','color','red','MarkerSize', 15);
-%     quiver(U, V);
-
-    %% find path from primary queue points
-    [connected_k, synapse_k] = find_synapse(start_points, Neurons, R, k, BW_thin, theta);
-    connected(k, :) = connected_k;
-    synapse(k, :) = synapse_k;
-end
-
-% make sure connectivity is symmetrical and least length
-for i = 1:num-1
-    for j = i+1:num
-        if connected(i, j) && connected(j, i) && connected(i, j) > connected(j, i)...
-                || connected(j, i) && ~connected(i, j)
-            connected(i, j) = connected(j, i);
-            synapse(i,j) = synapse(j, i);
-        end    
-    end
-end
-
-breadth = synapse_breadth(synapse, BW_p);
+%% Synapse detection
+% degree and distance threshold when connecting broken synapse
+theta_thre = 10;
+fill_gap = 10;
+[connected, synapse, breadth] = synapse_detection(BW_p, final_Neurons, R,...
+                                                theta_thre, fill_gap);
+                                            
 draw_synapse(connected, synapse, image_removed, breadth);

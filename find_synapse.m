@@ -1,4 +1,5 @@
-function [connected, synapse] = find_synapse(origins, Neurons, R, source, skeleton, thetas)
+function [connected, synapse] = find_synapse(origins, Neurons, R, source, ...
+                                    thinned_img, thetas, theta_thre, fill_gap)
 % current: current pixel on the path (start point)
 % former: former pixel on the path (tell the forward direction)
 % source: the neuron(index) this path originates from 
@@ -13,6 +14,9 @@ connected = zeros(num, 1);
 synapse = cell(num, 1);
 
 num_bifur = size(origins, 1);
+% preserve current image for each bifur
+bifur_thinned_img = cell(num_bifur, 1);
+
 % parameters for each bifur 
 % current point, former point, path length, path
 bifur_paras = cell(num_bifur, 1);
@@ -21,18 +25,17 @@ for i = 1 : num_bifur
     bifur_paras{i}(3, 2) = 1;
     bifur_paras{i}(1, :) = origins(i, :); 
     bifur_paras{i}(2, :) = Neurons(source, :);
+    % init thinned_img for each bifur as original thinned_img
+    bifur_thinned_img{i} = thinned_img;
 end
 
-[M, N] = size(skeleton);
-skeleton_save = skeleton;
+[M, N] = size(thinned_img);
 
 % for compare
 % if line is going through the source neuron, stop it
 % to prevent mis-stop, set R(source) smaller
-R_compare = 1.1 * R';
-
-theta_thre = 10;
-fill_gap = 10;
+R_compare = 1.25 * R';
+R_compare(source) = 1.2 * R(source);
 
 while num_bifur > 0
     % get information from bifur parameters
@@ -40,15 +43,11 @@ while num_bifur > 0
     former = bifur_paras{1}(2, :);
     path = bifur_paras{1}(4:end, :);
     path_length = bifur_paras{1}(3, 1);
-    refresh_skeleton = bifur_paras{1}(3, 2);
-    if refresh_skeleton
-        skeleton = skeleton_save;
-        bifur_paras{1}(3, 2) = 0;
-    end
+    current_thinned_img = bifur_thinned_img{1};
     % advance along path 1
     while true
         % plot synapses
-%         plot([current(1), former(1)],[current(2), former(2)],'LineWidth',2,'Color','blue');
+         plot([current(1), former(1)],[current(2), former(2)],'LineWidth',2,'Color','blue');
         %% whether reach other neurons
         dis = Neurons - repmat(current, num, 1);
         dis = sqrt(sum(dis.^2, 2));
@@ -56,6 +55,7 @@ while num_bifur > 0
             target = find(dis < R_compare);
             num_bifur = num_bifur - 1;
             bifur_paras(1) = [];
+            bifur_thinned_img(1) = [];
             if target == source
                 break;
             end   
@@ -69,7 +69,7 @@ while num_bifur > 0
             break;
         end 
         % cover passed points 
-        skeleton(current(2), current(1)) = false;
+        current_thinned_img(current(2), current(1)) = false;
         path = [path; current];
         % direction of last movement
         former_theta = atan2d(current(2) - former(2), current(1) - former(1));
@@ -77,7 +77,7 @@ while num_bifur > 0
         % get neighbours
         [neigh_x, neigh_y] = produce_meshgrid(current, 1, M, N);
         index = sub2ind([M, N], neigh_y, neigh_x);
-        neigh_index = find(skeleton(index));
+        neigh_index = find(current_thinned_img(index));
         % find feasible direction 
         neigh_x = neigh_x(neigh_index);
         neigh_y = neigh_y(neigh_index);
@@ -100,7 +100,7 @@ while num_bifur > 0
             forward_theta = (index_theta == 1) * theta1 + (index_theta == 2) * theta2;
             theta_differ = abs(area_theta - forward_theta);
             in_direction = theta_differ < theta_thre;
-            available = in_direction & skeleton(area_y(:, 1), area_x(1, :));
+            available = in_direction & current_thinned_img(area_y(:, 1), area_x(1, :));
             if sum(available(:)) > 0
                 % continue with the point after gap
                 dist = sqrt((area_x - current(1)).^2 + (area_y - current(2)).^2);
@@ -114,6 +114,7 @@ while num_bifur > 0
                 % end this path
                 num_bifur = num_bifur - 1;
                 bifur_paras(1) = [];
+                bifur_thinned_img(1) = [];
                 break;
             end
         %% more way to go
@@ -121,15 +122,23 @@ while num_bifur > 0
             % num of all bifurs
             num_bifur = num_bifur + current_bifur - 1;
             new_bifur_paras = cell(current_bifur, 1);
+            new_bifur_thinned_img = new_bifur_paras;
             % value of bifurs
             for i = 1:current_bifur
                 new_start = [neigh_x(i), neigh_y(i)];
-                skeleton(new_start(2), new_start(1)) = false;
+                % avoid repeating bifurs
+                current_thinned_img(new_start(2), new_start(1)) = false;
+            end
+            for i = 1:current_bifur
+                new_start = [neigh_x(i), neigh_y(i)];
                 new_bifur_paras{i} = [new_start; current; ...
-                                      path_length + 1, 0; [path; new_start]];
+                                  path_length + 1, 0; [path; new_start]];
+                new_bifur_thinned_img{i} = current_thinned_img;
             end
             bifur_paras(1) = [];
             bifur_paras = [new_bifur_paras; bifur_paras];
+            bifur_thinned_img(1) = [];
+            bifur_thinned_img = [new_bifur_thinned_img; bifur_thinned_img];
             break;
         %% one way to go
         else
