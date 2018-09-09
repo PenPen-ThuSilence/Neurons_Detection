@@ -4,12 +4,13 @@ num = length(synapse);
 
 breadth = cell(num);
 
-figure;
+
 sigma = 4;
 [U, V, thetas] = neurite_vector(BW, sigma);
-imshow(BW);
-hold on;
-quiver(U, V);
+% figure;
+% imshow(BW);
+% hold on;
+% quiver(U, V);
 
 for i = 1 : num-1
     for j = i+1 : num
@@ -39,10 +40,14 @@ end
 
     function distance = first_black_in_direction(point, theta, BW)
         distance = 1;
+        [m, n] = size(BW);
         while true
             point_in_direction = point + distance * [cosd(theta), sind(theta)];
             point_in_direction = round(point_in_direction);
-            if BW(point_in_direction(2), point_in_direction(1))
+            if (point_in_direction(1) < 1 || point_in_direction(1) > n ||...
+               point_in_direction(2) < 1 || point_in_direction(2) > m)
+                break
+            elseif BW(point_in_direction(2), point_in_direction(1))
                 distance = distance + 1;
             else
                 break;

@@ -24,14 +24,14 @@ for k = 1:num
     start_points = merge_random(start_points, 10);
     
     %% PLOT PROCESS
-%     % show primary queue
-    draw_circles_k(Neurons, R, BW_thin, k); hold on;
-    % label neurons
-    for j = 1:num
-        text(Neurons(j,1),Neurons(j,2),int2str(j),'FontSize',15,'Color','yellow');
-    end
-    plot(start_points(:,1),start_points(:,2),'.','color','red','MarkerSize', 15);
-%     quiver(U, V);
+% %     % show primary queue
+%     draw_circles_k(Neurons, R, BW_thin, k); hold on;
+%     % label neurons
+%     for j = 1:num
+%         text(Neurons(j,1),Neurons(j,2),int2str(j),'FontSize',15,'Color','yellow');
+%     end
+%     plot(start_points(:,1),start_points(:,2),'.','color','red','MarkerSize', 15);
+% %     quiver(U, V);
 
     %% find path from primary queue points
     [connected_k, synapse_k] = find_synapse(start_points, Neurons, R, k,...

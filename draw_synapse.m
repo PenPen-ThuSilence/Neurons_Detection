@@ -1,8 +1,6 @@
-function draw_synapse(connected, synapse, image, breadth)
+function draw_synapse(connected, synapse, breadth)
 
 num = length(connected);
-figure;
-imshow(image);
 hold on;
 title('synapse');
 

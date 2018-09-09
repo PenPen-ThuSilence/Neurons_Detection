@@ -2,7 +2,7 @@
 % Input: filename of image
 filename = 'images/cropped-t0.tif';
 img = imread(filename);
-img = img(5001:7000, 5001:7000);
+img = img(5001:5600, 5001:5600);
 %% Preprocess
 scale = 0.5;
 level_low = 0.3;
@@ -25,8 +25,8 @@ figure;
 imshow(BW_p);
 %% get potential points which can be neurons with kernel
 % parameters
-R_min = 10;
-R_max = 25;
+R_min = 25;
+R_max = 50;
 density_thre = 0.45:0.05:1;
 
 potential_neurons = intensive_points(BW_p, R_min, R_max, density_thre);
@@ -48,10 +48,8 @@ draw_neurons(BW_p, potential_neurons);
 
 % parameters
 threshold_angle = 0.65;
-R_max = 22;
-R_min = 10;
-R_around = 6;
-threshold_around = 0.2;
+R_around = round(0.5 * R_min);
+threshold_around = 0.2;                 
 
 [final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, potential_neurons, ...
                     'threshold_angle', threshold_angle, ...
@@ -73,4 +71,4 @@ fill_gap = 10;
 [connected, synapse, breadth] = synapse_detection(BW_p, final_Neurons, R,...
                                                 theta_thre, fill_gap);
                                             
-draw_synapse(connected, synapse, image_removed, breadth);
+draw_synapse(connected, synapse, breadth);
