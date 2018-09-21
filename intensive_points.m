@@ -6,7 +6,7 @@ points = zeros(0, 2);
 r_range = R_min : 2 : R_max;
 num = length(r_range);
 
-parfor j = 1:num
+for j = 1:num
     r = r_range(j);
     % circular kernel: pixels inside circle(r) are 1, outside ones are 0.
     kernel = circle_kernel(r, 0);

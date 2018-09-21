@@ -12,7 +12,7 @@ img_resize = imresize(img, scale, 'bilinear');
 %% adjustment of histogram
 
 image_adjusted = hist_adjust(img_resize, level_low, level_high);
-image_adjusted = uint8(image_adjusted / 256);
+image_adjusted = uint8(double(image_adjusted) / 256);
 %% enhance contrast
 se = strel('disk', disk_size);
 num = sum(se.Neighborhood(:));
@@ -46,12 +46,12 @@ end
 % area of regions
 p_area = STATS(1, :);
 % extent of regions
-p_extent = STATS(2, :);
+p_Extent = STATS(2, :);
 
 image_removed = image_enhanced;
 % remove unconnected neurons
 remove_index = find(p_median > intensity_thre & p_area < area_thre ...
-                    & p_extent > extent_thre);
+                    & p_Extent > extent_thre);
                 
 image_removed(ismember(L, remove_index)) = 0;
 %% preprocess for neuron detection
@@ -59,20 +59,32 @@ image_removed(ismember(L, remove_index)) = 0;
 % binarize
 BW = image_removed > binary_thre;
 
-% dilate and erode to connect parts of neurons
-se = strel('disk', 2);
-BW_p = imclose(BW, se);
-
-% fill holes in neurons which caused when removing dots
-BW_filled = imfill(BW_p, 'holes');
-fill_differ = BW_filled & ~BW_p;
-% preventing from fill very large holes
+% remove dots
+dots = image >= 235;
+%exclude synapses
 min_area = 40;
-fill = fill_differ & ~filterRegions_area(fill_differ, min_area);
+filtered = bwpropfilt(BW, 'Area', [min_area, Inf]);
 
-BW_p = BW_p | fill;
+dots_filtered = dots & ~filtered;
+
+BW_p = BW & ~dots_filtered;
 
 % remove small regions in binary images which were dark in uint8 images
 BW_open = bwareaopen(BW_p, min_pixel_num);
 
 BW_p = BW_open;
+
+% connect
+se = strel('disk', 2);
+BW_p = imclose(BW_p, se);
+
+BW_p = bwareaopen(BW_p, 1.5 * min_pixel_num);
+
+% fill holes in neurons which caused when removing dots
+BW_filled = imfill(BW_p, 'holes');
+fill_differ = BW_filled & ~BW_p;
+% preventing from fill very large holes
+min_area = 50;
+fill = fill_differ & ~filterRegions_area(fill_differ, min_area);
+
+BW_p = BW_p | fill;

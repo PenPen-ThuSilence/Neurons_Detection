@@ -1,19 +1,18 @@
 %% read image
 % Input: filename of image
-filename = 'images/cropped-t0.tif';
+filename = 'test_sample.tif';
 img = imread(filename);
-img = img(5001:5600, 5001:5600);
 %% Preprocess
 scale = 0.5;
-level_low = 0.3;
+level_low = 0.38;
 level_high = 0.98;
 disk_size = 1;
-label_thre = 20;
-intensity_thre = 180;
-extent_thre = 0.4;
-area_thre = 400;
-binary_thre = 35;
-min_pixel_num = 40;
+label_thre = 40;
+intensity_thre = 150;
+extent_thre = 0.3;
+area_thre = 600;
+binary_thre = 40;
+min_pixel_num = 50;
 
 [image_removed, BW_p] = preprocess(img, scale, level_low, level_high, ...
                                      disk_size, label_thre, intensity_thre, ...
@@ -21,14 +20,16 @@ min_pixel_num = 40;
 % show                                 
 figure;
 imshow(image_removed);
+
 figure;
 imshow(BW_p);
+title('binary image');
 %% Neuron Detection
 % get potential points which can be neurons with kernel
 % parameters
-R_min = 25;
-R_max = 50;
-density_thre = 0.45:0.05:1;
+R_min = 20;
+R_max = 60;
+density_thre = 0.35:0.05:1;
 
 potential_neurons = intensive_points(BW_p, R_min, R_max, density_thre);
 draw_neurons(BW_p, potential_neurons);
@@ -50,7 +51,7 @@ draw_neurons(BW_p, potential_neurons);
 % parameters
 threshold_angle = 0.65;
 R_around = round(0.5 * R_min);
-threshold_around = 0.2;                 
+threshold_around = 0;                 
 
 [final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, potential_neurons, ...
                     'threshold_angle', threshold_angle, ...
@@ -64,12 +65,38 @@ draw_circles(final_Neurons, R, image_removed);
 for i = 1:length(grades)
     text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');
 end
+%% assign possibility and direction for synapse
+BW_thin = bwmorph(BW_p, 'thin', 20);
 
+sigma = 8;
+[U, V, theta] = neurite_vector(BW_p, sigma);
+
+theta = theta .* BW_thin;
 %% Synapse detection
 % degree and distance threshold when connecting broken synapse
-theta_thre = 15;
-fill_gap = 10;
-[connected, synapse, breadth] = synapse_detection(BW_p, final_Neurons, R,...
-                                                theta_thre, fill_gap);
+theta_thre = 30;
+fill_gap = 15;
+[connected, synapse, breadth] = synapse_detection(BW_p, BW_thin, final_Neurons,...
+                                                R, theta, theta_thre, fill_gap);
                                             
 draw_synapse(connected, synapse, breadth);
+
+%% Astar for the shortest paths
+num = size(connected, 1);
+synapse_new = cell(num);
+
+figure; imshow(BW_thin); hold on;
+
+for i = 1 : num - 1
+    for j = i + 1 : num
+        if connected(i, j)
+            path = synapse{i, j};
+            Start = path(2, :);
+            Astar_Synapse(BW_thin, i, R, final_Neurons, j, theta, ...
+                                    fill_gap, theta_thre, Start);
+%             optimal_path = path_Astar(BW_thin, Start, R, final_Neurons, ...
+%                                 Target, theta, fill_gap, theta_thre);
+            synapse_new{i, j} = optimal_path;
+        end
+    end
+end

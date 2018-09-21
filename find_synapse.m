@@ -18,10 +18,11 @@ num_bifur = size(origins, 1);
 % current point, former point, path length, path
 bifur_paras = cell(num_bifur, 1);
 for i = 1 : num_bifur
-    bifur_paras{i} = zeros(3, 2);
+    bifur_paras{i} = zeros(4, 2);
     bifur_paras{i}(3, 2) = 1;
     bifur_paras{i}(1, :) = origins(i, :); 
     bifur_paras{i}(2, :) = Neurons(source, :);
+    bifur_paras{i}(4, :) = Neurons(source, :);
 end
 
 [M, N] = size(skeleton);
@@ -46,6 +47,9 @@ while num_bifur > 0
     end
     % advance along path 1
     while true
+        % cover passed points 
+        skeleton(current(2), current(1)) = false;
+        path = [path; current];
         % plot synapses
 %         plot([current(1), former(1)],[current(2), former(2)],'LineWidth',2,'Color','blue');
         %% whether reach other neurons
@@ -54,10 +58,11 @@ while num_bifur > 0
         if max(dis < R_compare)
             target = find(dis < R_compare);
             num_bifur = num_bifur - 1;
-            bifur_paras(1) = [];
+            bifur_paras(1) = []; 
             if target == source
                 break;
             end   
+            path = [path; Neurons(target, :)];
             if connected(target) == 0
                 connected(target) = path_length;
                 synapse{target} = path;
@@ -67,9 +72,6 @@ while num_bifur > 0
             end
             break;
         end 
-        % cover passed points 
-        skeleton(current(2), current(1)) = false;
-        path = [path; current];
         % direction of last movement
         former_theta = atan2d(current(2) - former(2), current(1) - former(1));
         %% whether there are bifurcations
@@ -145,18 +147,4 @@ while num_bifur > 0
     end
 end
 
-    function [x_grid, y_grid] = produce_meshgrid(center, r, m, n)
-        % produce meshgrid with center and range distance
-        % x_range
-        x = center(1);
-        y = center(2);
-        x_range = x - r : x + r;
-        exceed_x = x_range < 1 | x_range > n;
-        x_range(exceed_x) = [];
-        % y_range
-        y_range = y - r : y + r;
-        exceed_y = y_range < 1 | y_range > m;
-        y_range(exceed_y) = [];
-        [x_grid, y_grid] = meshgrid(x_range, y_range);  
-    end
 end

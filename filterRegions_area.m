@@ -11,7 +11,7 @@ function [BW_out,properties] = filterRegions_area(BW_out, min_area)
 
 % Filter image based on image properties.
 
-BW_out = bwpropfilt(BW_out, 'Area', [min_area, Inf]);
+
 % min_MAL = 20;
 % BW_out = bwpropfilt(BW_out, 'MajorAxisLength', [min_MAL + eps(min_MAL), Inf]);
 

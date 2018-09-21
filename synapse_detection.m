@@ -1,13 +1,5 @@
-function [connected, synapse, breadth] = synapse_detection(BW, Neurons, R, ...
-                                                theta_thre, fill_gap)
-%% assign possibility and direction for synapse
-BW_thin = bwmorph(BW, 'thin', 20);
-
-sigma = 1;
-[U, V, theta] = neurite_vector(BW_thin, sigma);
-
-theta = theta .* BW_thin;
-
+function [connected, synapse, breadth] = synapse_detection(BW, BW_thin, Neurons, R, ...
+                                                theta, theta_thre, fill_gap)
 %% find synaspe with thinned image
 num = size(Neurons, 1);
 connected = zeros(num, num);
@@ -46,7 +38,7 @@ for i = 1:num-1
         if connected(i, j) && connected(j, i) && connected(i, j) > connected(j, i)...
                 || connected(j, i) && ~connected(i, j)
             connected(i, j) = connected(j, i);
-            synapse(i,j) = synapse(j, i);
+            synapse{i,j} = flip(synapse{j, i}, 1);
         end    
     end
 end
