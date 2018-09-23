@@ -62,5 +62,7 @@ function exp_array = expand_array(node_x, node_y, hn, xTarget, yTarget, ...
     
     fn_new = hn_new + gn_new;
     
-    exp_array = [exp_array, hn_new, gn_new, fn_new];
+    former_theta = atan2d(exp_array(:, 2) - Node(2), exp_array(:, 1) - Node(1));
+    
+    exp_array = [exp_array, hn_new, gn_new, fn_new, former_theta];
 end  

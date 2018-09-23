@@ -1,18 +1,13 @@
-function new_row = insert_open(xval,yval,parent_index,hn,gn,fn)
+function new_row = insert_open(xval,yval,parent_index,hn,gn,fn,...
+                                target_index,theta)
 %Function to Populate the OPEN LIST
 %OPEN LIST FORMAT
 %--------------------------------------------------------------------------
-%IS ON LIST 1/0 |X val |Y val |Parent X val |Parent Y val |h(n) |g(n)|f(n)|
+%IS ON LIST 1/0 |X val |Y val |Parent index |h(n) |g(n)|f(n)| target_index
+%former theta |
 %-------------------------------------------------------------------------
 %
 %   Copyright 2009-2010 The MathWorks, Inc.
-new_row=[1,8];
-new_row(1,1) = 1;
-new_row(1,2) = xval;
-new_row(1,3) = yval;
-new_row(1,4) = parent_index;
-new_row(1,5) = hn;
-new_row(1,6) = gn;
-new_row(1,7) = fn;
+new_row = [1, xval, yval, parent_index, hn, gn, fn, target_index, theta];
 
 end

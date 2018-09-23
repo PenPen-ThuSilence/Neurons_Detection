@@ -1,59 +1,66 @@
 function optimal_path = Astar_Synapse(BW, Source, R, Neurons, Goal, thetas, ...
-                                    fill_gap, theta_thre, Start)
-
+                                    fill_gap, theta_thre, connected)                              
+%% Parameters
 [MAX_Y, MAX_X] = size(BW);
-num = size(Neurons, 1);
 
-xStart = Start(1);
-yStart = Start(2);
+Target = Neurons(connected > 0, :);
 
-Target = Neurons(Goal, :);
-xTarget = Target(1);
-yTarget = Target(2);
+R_compare = 1.2 * R(connected > 0);
 
-R_compare = 1.25 * R';
-R_compare(Source) = 1.0 * R(Source);
-
-OPEN = [];
-
-% Put all background points on the Closed list
+Reach_points = zeros(0, 2);
+%% Put all background points on the Closed list
 [close_y, close_x] = find(~BW);
 
 CLOSED = [close_x, close_y];
 CLOSED_COUNT = size(CLOSED, 1);
-% set the starting node as the first node
-xNode = xStart;
-yNode = yStart;
-OPEN_COUNT = 1;
+
+%% put starting nodes in OPEN list
+% get start points with source neuron and radius
+circle_area = circle_points(Neurons, round(R*1.3), BW);
+start_points = circle_area{Source};
 % path cost = 0
 path_cost = 0;
-parent_index = 1;
-goal_distance = distance(xNode, yNode, xTarget, yTarget);
-OPEN(OPEN_COUNT, :) = insert_open(xNode, yNode, parent_index, ...
-                                path_cost, goal_distance, goal_distance);
-former_theta = thetas(yNode, xNode);
-% remove from list
-OPEN(OPEN_COUNT, 1) = 0;
-CLOSED_COUNT = CLOSED_COUNT + 1;
-CLOSED(CLOSED_COUNT, :) = [xNode, yNode];
+% put starting nodes in OPEN list
+OPEN_COUNT = size(start_points, 1);
+OPEN = zeros(OPEN_COUNT, 8);
+for i = 1 : OPEN_COUNT
+    xNode = start_points(i, 1);
+    yNode = start_points(i, 2);
+    % parent_index = 0 stands for start
+    parent_index = 0;
+    % distance
+    [goal_distance, target_index] = distance(xNode, yNode, xTarget, yTarget);
+    % theta
+    former_theta = thetas(yNode, xNode);
+    % insert
+    OPEN(i, :) = insert_open(xNode, yNode, parent_index, path_cost,...
+                     goal_distance, goal_distance, target_index, former_theta);
+end
 
+%% Loop 
 NoPath = 1;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% START ALGORITHM
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 while true
-%     dis = sqrt(sum((repmat([xNode, yNode], num, 1) - Neurons) .^ 2, 2));
-    dis = sqrt(sum(([xNode, yNode] - Neurons(Goal, :)) .^ 2, 2));
-    exp_array = [];
-    if dis < R_compare(Goal)
-        NoPath = 0;
+%% Find out the node with the smallest fn 
+    index_min_node = min_fn(OPEN, OPEN_COUNT, xTarget, yTarget);
+    if (index_min_node ~= -1)    
+    %Set xNode and yNode to the node with minimum fn
+        xNode = OPEN(index_min_node, 2);
+        yNode = OPEN(index_min_node, 3);
+        path_cost = OPEN(index_min_node, 5);%Update the cost of reaching the parent node
+        %Move the Node to list CLOSED
+        parent_index = index_min_node;
+        CLOSED_COUNT = CLOSED_COUNT + 1;
+        CLOSED(CLOSED_COUNT, :) = [xNode, yNode];
+        OPEN(index_min_node, 1) = 0;
+        plot(xNode,yNode, 'g+');
+    else
+        %No path exists to the Target!!
         break;
-%     if max(dis < R_compare)
-%         Reach = find(dis < R_compare);
-%         if Reach == Goal
-%             NoPath = 0;
-%             break;
-%         end
+    end%End of index_min_node check
+%% whether reach other neurons
+    dis = mydistance([xNode, yNode], Target);
+    if dis < R_compare
+        Reach_points = [Reach_points; xNode, yNode];
     else
         exp_array = expand_array(xNode,yNode,path_cost,xTarget,yTarget,CLOSED,...
                            MAX_X,MAX_Y, former_theta, thetas, fill_gap, theta_thre);
@@ -66,16 +73,15 @@ while true
     %--------------------------------------------------------------------------
     %EXPANDED ARRAY FORMAT
     %--------------------------------
-    %| X val | Y val | h(n) | g(n) | f(n) |
+    %| X val | Y val | h(n) | g(n) | f(n) | theta
     %--------------------------------
     for i = 1 : exp_count
         % whether expanded point in OPEN list
         exp_point = exp_array(i, :);
-        Isopen = ismember(exp_point(1:2), OPEN(:,2:3), 'rows');
+        [Isopen, Location] = ismember(exp_point(1:2), OPEN(:,2:3), 'rows');
         if Isopen
-            index_open = find(ismember(OPEN(:,2:3), exp_point(1:2), 'rows'));
-            if exp_point(5) < OPEN(index_open, 7)
-                OPEN(index_open, 4:7) = [OPEN_COUNT, exp_point(3:end)];
+            if exp_point(5) < OPEN(Location, 7)
+                OPEN(Location, 4:7) = [OPEN_COUNT, exp_point(3:end)];
             end
         else
             OPEN_COUNT = OPEN_COUNT + 1;
@@ -84,30 +90,6 @@ while true
                                               exp_point(4), exp_point(5));
         end%End of insert new element into the OPEN list
     end%End of i for
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%END OF WHILE LOOP
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Find out the node with the smallest fn 
-    index_min_node = min_fn(OPEN, OPEN_COUNT, xTarget, yTarget);
-    former = [xNode, yNode];
-    if (index_min_node ~= -1)    
-    %Set xNode and yNode to the node with minimum fn
-        xNode = OPEN(index_min_node, 2);
-        yNode = OPEN(index_min_node, 3);
-        former_theta = atan2d(yNode - former(2), ...
-                        xNode - former(1));
-        path_cost = OPEN(index_min_node, 5);%Update the cost of reaching the parent node
-        %Move the Node to list CLOSED
-        parent_index = index_min_node;
-        CLOSED_COUNT = CLOSED_COUNT + 1;
-        CLOSED(CLOSED_COUNT, :) = [xNode, yNode];
-        OPEN(index_min_node, 1) = 0;
-         plot(xNode,yNode, 'g+');
-    else
-        %No path exists to the Target!!
-        %Exits the loop!
-        break;
-    end%End of index_min_node check
 end%End of While Loop
 
 %Once algorithm has run The optimal path is generated by starting of at the

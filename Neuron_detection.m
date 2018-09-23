@@ -74,16 +74,19 @@ sigma = 8;
 theta = theta .* BW_thin;
 %% Synapse detection
 % degree and distance threshold when connecting broken synapse
-theta_thre = 30;
-fill_gap = 15;
-[connected, synapse, breadth] = synapse_detection(BW_p, BW_thin, final_Neurons,...
+theta_thre = 25;
+fill_gap = 20;
+[connected, synapse] = synapse_detection(BW_p, BW_thin, final_Neurons,...
                                                 R, theta, theta_thre, fill_gap);
-                                            
-draw_synapse(connected, synapse, breadth);
+                          
+breadth = synapse_breadth(synapse, BW_p);
 
+draw_synapse(connected, synapse, breadth);
 %% Astar for the shortest paths
 num = size(connected, 1);
 synapse_new = cell(num);
+
+connected_tri = triu(connected, 0);
 
 figure; imshow(BW_thin); hold on; 
 
@@ -94,7 +97,7 @@ for i = 1 : 1
             path = synapse{i, j};
             Start = path(2, :);
             optimal_path = Astar_Synapse(BW_p, i, R, final_Neurons, j, theta, ...
-                                    fill_gap, theta_thre, Start);
+                                    fill_gap, theta_thre, connected_tri(i, :));
 %             optimal_path = path_Astar(BW_thin, Start, R, final_Neurons, ...
 %                                 Target, theta, fill_gap, theta_thre);
             synapse_i{j} = optimal_path;

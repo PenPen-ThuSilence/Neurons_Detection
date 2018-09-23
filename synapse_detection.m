@@ -1,4 +1,4 @@
-function [connected, synapse, breadth] = synapse_detection(BW, BW_thin, Neurons, R, ...
+function [connected, synapse] = synapse_detection(BW, BW_thin, Neurons, R, ...
                                                 theta, theta_thre, fill_gap)
 %% find synaspe with thinned image
 num = size(Neurons, 1);
@@ -26,7 +26,7 @@ for k = 1:num
 % %     quiver(U, V);
 
     %% find path from primary queue points
-    [connected_k, synapse_k] = find_synapse(start_points, Neurons, R, k,...
+    [connected_k, synapse_k] = find_synapse_new(start_points, Neurons, R, k,...
                                             BW_thin, theta, theta_thre, fill_gap);
     connected(k, :) = connected_k;
     synapse(k, :) = synapse_k;
@@ -42,5 +42,3 @@ for i = 1:num-1
         end    
     end
 end
-
-breadth = synapse_breadth(synapse, BW);

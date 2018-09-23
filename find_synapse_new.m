@@ -1,4 +1,4 @@
-function [connected, synapse] = find_synapse(origins, Neurons, R, source,...
+function [connected, synapse] = find_synapse_new(origins, Neurons, R, source,...
                             skeleton, thetas, theta_thre, fill_gap)
 % current: current pixel on the path (start point)
 % former: former pixel on the path (tell the forward direction)
@@ -17,6 +17,8 @@ num_bifur = size(origins, 1);
 % parameters for each bifur 
 % current point, former point, path length, path
 bifur_paras = cell(num_bifur, 1);
+CLOSE_list = cell(num_bifur, 1);
+
 for i = 1 : num_bifur
     bifur_paras{i} = zeros(4, 2);
     bifur_paras{i}(3, 2) = 1;
@@ -26,7 +28,9 @@ for i = 1 : num_bifur
 end
 
 [M, N] = size(skeleton);
-skeleton_save = skeleton;
+
+% figure;
+% imshow(skeleton); hold on;
 
 % for compare
 % if line is going through the source neuron, stop it
@@ -40,15 +44,11 @@ while num_bifur > 0
     former = bifur_paras{1}(2, :);
     path = bifur_paras{1}(4:end, :);
     path_length = bifur_paras{1}(3, 1);
-    refresh_skeleton = bifur_paras{1}(3, 2);
-    if refresh_skeleton
-        skeleton = skeleton_save;
-        bifur_paras{1}(3, 2) = 0;
-    end
+    current_CLOSE = CLOSE_list{1};
     % advance along path 1
     while true
         % cover passed points 
-        skeleton(current(2), current(1)) = false;
+        current_CLOSE = [current_CLOSE; current];
         path = [path; current];
         % plot synapses
         plot([current(1), former(1)],[current(2), former(2)],'LineWidth',2,'Color','blue');
@@ -77,17 +77,34 @@ while num_bifur > 0
         %% whether there are bifurcations
         % get neighbours
         [neigh_x, neigh_y] = produce_meshgrid(current, 1, M, N);
+        % neighbours which are bright
         index = sub2ind([M, N], neigh_y, neigh_x);
-        neigh_index = find(skeleton(index));
-        % find feasible direction 
+        neigh_index = find(skeleton(index)); 
         neigh_x = neigh_x(neigh_index);
         neigh_y = neigh_y(neigh_index);
+        % neighbours which are not in CLOSE
+        num_neigh = numel(neigh_x);
+        neigh_x = reshape(neigh_x, [num_neigh 1]);
+        neigh_y = reshape(neigh_y, [num_neigh 1]);
+        
+        IsClose = ismember([neigh_x, neigh_y], current_CLOSE, 'rows');
+        neigh_x(IsClose) = [];
+        neigh_y(IsClose) = [];
         % number of bifurcations
-        current_bifur = length(neigh_index);
+        current_bifur = length(neigh_x);
         %% no way to go
         if ~current_bifur
             % whether this is just a small gap ?
             [area_x, area_y] = produce_meshgrid(current, fill_gap, M, N);
+            % bright neighbours
+            index = sub2ind([M, N], area_y, area_x);
+            bright_index = find(skeleton(index));
+            area_x = area_x(bright_index);
+            area_y = area_y(bright_index);
+            % theta from center to neighbours
+            num_area = numel(area_x);
+            area_x = reshape(area_x, [num_area 1]);
+            area_y = reshape(area_y, [num_area 1]);
             area_theta = atan2d(area_y - current(2), area_x - current(1));
             % get angle from neurite detector
             angle = thetas(current(2), current(1));
@@ -99,14 +116,26 @@ while num_bifur > 0
             theta_dis(theta_dis > 180) = 360 - theta_dis(theta_dis > 180);
             [~, index_theta] = min(theta_dis);
             forward_theta = (index_theta == 1) * theta1 + (index_theta == 2) * theta2;
+            % average of neurite detector and last movement
+            forward_theta = mean([forward_theta, former_theta]); 
             theta_differ = abs(area_theta - forward_theta);
+            % whether points of the area are in forward direction
             in_direction = theta_differ < theta_thre;
-            available = in_direction & skeleton(area_y(:, 1), area_x(1, :));
-            if sum(available(:)) > 0
+            % whether points of the area are in CLOSE
+            in_close = ismember([area_x, area_y], current_CLOSE, 'rows');
+            % whether thetas of points in the area are suitable
+            index = sub2ind([M, N], area_y, area_x);
+            neurite_theta = thetas(index);
+            theta_suit = abs(neurite_theta - forward_theta);
+            theta_suit(theta_suit > 180) = 360 - theta_suit(theta_suit > 180);
+            theta_suit = theta_suit < theta_thre;
+            % available point
+            available = in_direction & ~in_close & theta_suit;
+            if sum(available) > 0
                 % continue with the point after gap
                 dist = sqrt((area_x - current(1)).^2 + (area_y - current(2)).^2);
                 dist_available = dist ./ available;
-                [dis_min, index_forward] = min(dist_available(:));
+                [dis_min, index_forward] = min(dist_available);
                 next_after_gap = [area_x(index_forward), area_y(index_forward)];
                 former = current;
                 current = next_after_gap;
@@ -128,15 +157,18 @@ while num_bifur > 0
             % num of all bifurs
             num_bifur = num_bifur + current_bifur - 1;
             new_bifur_paras = cell(current_bifur, 1);
+            new_CLOSE_list = cell(current_bifur, 1);
+            current_CLOSE = [current_CLOSE; neigh_x, neigh_y];
             % value of bifurs
             for i = 1:current_bifur
                 new_start = [neigh_x(del_index(i)), neigh_y(del_index(i))];
-                skeleton(new_start(2), new_start(1)) = false;
                 new_bifur_paras{del_index(i)} = [new_start; current; ...
                                       path_length + 1, 0; [path; new_start]];
+                new_CLOSE_list{i} = current_CLOSE;
             end
             bifur_paras(1) = [];
             bifur_paras = [new_bifur_paras; bifur_paras];
+            CLOSE_list = [new_CLOSE_list; CLOSE_list];
             break;
         %% one way to go
         else
@@ -146,5 +178,4 @@ while num_bifur > 0
         end
     end
 end
-
 end
