@@ -74,8 +74,8 @@ sigma = 8;
 theta = theta .* BW_thin;
 %% Synapse detection
 % degree and distance threshold when connecting broken synapse
-theta_thre = 15;
-fill_gap = 20;
+theta_thre = 10;
+fill_gap = 10;
 [connected, synapse] = synapse_detection(BW_p, BW_thin, final_Neurons,...
                                                 R, theta, theta_thre, fill_gap);
                           

@@ -51,7 +51,7 @@ while num_bifur > 0
         current_CLOSE = [current_CLOSE; current];
         path = [path; current];
         % plot synapses
-        plot([current(1), former(1)],[current(2), former(2)],'LineWidth',2,'Color','blue');
+%         plot([current(1), former(1)],[current(2), former(2)],'LineWidth',2,'Color','blue');
         %% whether reach other neurons
         dis = Neurons - repmat(current, num, 1);
         dis = sqrt(sum(dis.^2, 2));

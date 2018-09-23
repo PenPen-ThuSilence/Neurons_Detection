@@ -8,7 +8,7 @@ synapse = cell(num);
 
 circle_area = circle_points(Neurons, round(R*1.5), BW_thin);
 
-for k = 2:num
+for k = 1:num
     % primary queue: intersection points of circle and neuron
     start_points = circle_area{k};
     index = sub2ind([m, n], start_points(:,2), start_points(:,1));
