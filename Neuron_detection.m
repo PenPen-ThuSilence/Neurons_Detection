@@ -4,11 +4,11 @@ filename = 'test_sample.tif';
 img = imread(filename);
 %% Preprocess
 scale = 0.5;
-level_low = 0.38;
+level_low = 0.30;
 level_high = 0.98;
 disk_size = 1;
 label_thre = 40;
-intensity_thre = 150;
+intensity_thre = 160;
 extent_thre = 0.3;
 area_thre = 600;
 binary_thre = 40;
@@ -49,15 +49,15 @@ draw_neurons(BW_p, potential_neurons);
 % center.
 
 % parameters
-threshold_angle = 0.65;
-R_around = round(0.5 * R_min);
-threshold_around = 0;                 
+threshold_angle = 0.7;
+R_around_scale = 0.6;
+threshold_around = 0.4;                 
 
 [final_Neurons, grades, R, around] = IsNeurons_new_4(BW_p, potential_neurons, ...
                     'threshold_angle', threshold_angle, ...
                     'merge_dis', 2, ...
                     'R_max', R_max, 'R_min', R_min, 'annulus', 3, ...
-                    'R_around', R_around, 'threshold_around', threshold_around);
+                    'R_around', R_around_scale, 'threshold_around', threshold_around);
 
 draw_circles(final_Neurons, R, image_removed);
 
@@ -74,7 +74,7 @@ sigma = 8;
 theta = theta .* BW_thin;
 %% Synapse detection
 % degree and distance threshold when connecting broken synapse
-theta_thre = 25;
+theta_thre = 15;
 fill_gap = 20;
 [connected, synapse] = synapse_detection(BW_p, BW_thin, final_Neurons,...
                                                 R, theta, theta_thre, fill_gap);
@@ -82,36 +82,36 @@ fill_gap = 20;
 breadth = synapse_breadth(synapse, BW_p);
 
 draw_synapse(connected, synapse, breadth);
-%% Astar for the shortest paths
-num = size(connected, 1);
-synapse_new = cell(num);
-
-connected_tri = triu(connected, 0);
-
-figure; imshow(BW_thin); hold on; 
-
-for i = 1 : 1
-    synapse_i = synapse_new(i, :);
-    for j = i + 1 : num
-        if connected(i, j)
-            path = synapse{i, j};
-            Start = path(2, :);
-            optimal_path = Astar_Synapse(BW_p, i, R, final_Neurons, j, theta, ...
-                                    fill_gap, theta_thre, connected_tri(i, :));
-%             optimal_path = path_Astar(BW_thin, Start, R, final_Neurons, ...
-%                                 Target, theta, fill_gap, theta_thre);
-            synapse_i{j} = optimal_path;
-            synapse_new(i, :) = synapse_i;
-        end
-    end
-end
-
-
-draw_circles(final_Neurons, R, image_removed);
-
-% number neurons
-for i = 1:length(grades)
-    text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');
-end
-
-draw_synapse(connected, synapse_new, breadth);
+% %% Astar for the shortest paths
+% num = size(connected, 1);
+% synapse_new = cell(num);
+% 
+% connected_tri = triu(connected, 0);
+% 
+% figure; imshow(BW_thin); hold on; 
+% 
+% for i = 1 : 1
+%     synapse_i = synapse_new(i, :);
+%     for j = i + 1 : num
+%         if connected(i, j)
+%             path = synapse{i, j};
+%             Start = path(2, :);
+%             optimal_path = Astar_Synapse(BW_p, i, R, final_Neurons, j, theta, ...
+%                                     fill_gap, theta_thre, connected_tri(i, :));
+% %             optimal_path = path_Astar(BW_thin, Start, R, final_Neurons, ...
+% %                                 Target, theta, fill_gap, theta_thre);
+%             synapse_i{j} = optimal_path;
+%             synapse_new(i, :) = synapse_i;
+%         end
+%     end
+% end
+% 
+% 
+% draw_circles(final_Neurons, R, image_removed);
+% 
+% % number neurons
+% for i = 1:length(grades)
+%     text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');
+% end
+% 
+% draw_synapse(connected, synapse_new, breadth);

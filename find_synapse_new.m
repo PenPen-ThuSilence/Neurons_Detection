@@ -59,9 +59,10 @@ while num_bifur > 0
             target = find(dis < R_compare);
             num_bifur = num_bifur - 1;
             bifur_paras(1) = []; 
+            CLOSE_list(1) = [];
             if target == source
                 break;
-            end   
+            end
             path = [path; Neurons(target, :)];
             if connected(target) == 0
                 connected(target) = path_length;
@@ -139,11 +140,12 @@ while num_bifur > 0
                 next_after_gap = [area_x(index_forward), area_y(index_forward)];
                 former = current;
                 current = next_after_gap;
-                path_length = path_length + sqrt(dis_min);
+                path_length = path_length + dis_min;
             else
                 % end this path
                 num_bifur = num_bifur - 1;
                 bifur_paras(1) = [];
+                CLOSE_list(1) = [];
                 break;
             end
         %% more way to go
@@ -162,11 +164,13 @@ while num_bifur > 0
             % value of bifurs
             for i = 1:current_bifur
                 new_start = [neigh_x(del_index(i)), neigh_y(del_index(i))];
+                step = sqrt(sum((new_start - current) .^ 2));
                 new_bifur_paras{del_index(i)} = [new_start; current; ...
-                                      path_length + 1, 0; [path; new_start]];
+                                      path_length + step, 0; [path; new_start]];
                 new_CLOSE_list{i} = current_CLOSE;
             end
             bifur_paras(1) = [];
+            CLOSE_list(1) = [];
             bifur_paras = [new_bifur_paras; bifur_paras];
             CLOSE_list = [new_CLOSE_list; CLOSE_list];
             break;

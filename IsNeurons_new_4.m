@@ -91,21 +91,23 @@ parfor k = 1:size(points,1)
         angle = length(unique(round(slope_bright)));
         angles(j) = angle / length(unique(round(slope)));
     end
+    [grade, index] = max(angles);
+    best_R = R_p(index);
+    R_soma = ir.R_around * best_R;
     % whether exists soma around 
-    row = max(1, point_k(1) - ir.R_around):...
-        min(N, point_k(1) + ir.R_around);
-    col = max(1, point_k(2) - ir.R_around)...
-        :min(M, point_k(2) + ir.R_around);
+    row = max(1, point_k(1) - R_soma):...
+        min(N, point_k(1) + R_soma);
+    col = max(1, point_k(2) - R_soma)...
+        :min(M, point_k(2) + R_soma);
     [area_x, area_y] = meshgrid(row, col);
     dist = sqrt((area_x - point_k(1)).^2 + (area_y - point_k(2)).^2);
-    circle_around = dist < ir.R_around;
+    circle_around = dist < R_soma;
     circle_around_bright = circle_around & BW(col, row);
     around_p = sum(circle_around_bright(:)) / sum(circle_around(:));
     if max(angles) > ir.threshold_angle && around_p > ir.threshold_around
         Neurons = [Neurons; points(k,:)];
-        [grade, index] = max(angles);
         grades = [grades, grade];
-        R = [R, R_p(index)];
+        R = [R, best_R];
         around = [around, around_p];
     end         
 end
