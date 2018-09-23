@@ -85,18 +85,30 @@ draw_synapse(connected, synapse, breadth);
 num = size(connected, 1);
 synapse_new = cell(num);
 
-figure; imshow(BW_thin); hold on;
+figure; imshow(BW_thin); hold on; 
 
-for i = 1 : num - 1
+for i = 1 : 1
+    synapse_i = synapse_new(i, :);
     for j = i + 1 : num
         if connected(i, j)
             path = synapse{i, j};
             Start = path(2, :);
-            Astar_Synapse(BW_thin, i, R, final_Neurons, j, theta, ...
+            optimal_path = Astar_Synapse(BW_p, i, R, final_Neurons, j, theta, ...
                                     fill_gap, theta_thre, Start);
 %             optimal_path = path_Astar(BW_thin, Start, R, final_Neurons, ...
 %                                 Target, theta, fill_gap, theta_thre);
-            synapse_new{i, j} = optimal_path;
+            synapse_i{j} = optimal_path;
+            synapse_new(i, :) = synapse_i;
         end
     end
 end
+
+
+draw_circles(final_Neurons, R, image_removed);
+
+% number neurons
+for i = 1:length(grades)
+    text(final_Neurons(i,1),final_Neurons(i,2),int2str(i),'FontSize',10,'Color','red');
+end
+
+draw_synapse(connected, synapse_new, breadth);

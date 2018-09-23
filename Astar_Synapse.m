@@ -12,7 +12,7 @@ xTarget = Target(1);
 yTarget = Target(2);
 
 R_compare = 1.25 * R';
-R_compare(Source) = 1.15 * R(Source);
+R_compare(Source) = 1.0 * R(Source);
 
 OPEN = [];
 
@@ -42,14 +42,18 @@ NoPath = 1;
 % START ALGORITHM
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 while true
-    dis = sqrt(sum((repmat([xNode, yNode], num, 1) - Neurons) .^ 2, 2));
+%     dis = sqrt(sum((repmat([xNode, yNode], num, 1) - Neurons) .^ 2, 2));
+    dis = sqrt(sum(([xNode, yNode] - Neurons(Goal, :)) .^ 2, 2));
     exp_array = [];
-    if max(dis < R_compare)
-        Reach = find(dis < R_compare);
-        if Reach == Goal
-            NoPath = 0;
-            break;
-        end
+    if dis < R_compare(Goal)
+        NoPath = 0;
+        break;
+%     if max(dis < R_compare)
+%         Reach = find(dis < R_compare);
+%         if Reach == Goal
+%             NoPath = 0;
+%             break;
+%         end
     else
         exp_array = expand_array(xNode,yNode,path_cost,xTarget,yTarget,CLOSED,...
                            MAX_X,MAX_Y, former_theta, thetas, fill_gap, theta_thre);
@@ -98,7 +102,7 @@ while true
         CLOSED_COUNT = CLOSED_COUNT + 1;
         CLOSED(CLOSED_COUNT, :) = [xNode, yNode];
         OPEN(index_min_node, 1) = 0;
-%         plot(xNode,yNode, 'g+');
+         plot(xNode,yNode, 'g+');
     else
         %No path exists to the Target!!
         %Exits the loop!
